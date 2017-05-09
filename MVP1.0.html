@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+
+    <style>
+      circle.dimple-series-1 {
+        fill: "red";
+      }
+
+      h2 {
+        text-align: middle;
+      }
+
+      svg {
+        float:none;
+
+      }
+    </style>
+
+
+
+    <script type="text/javascript">
+      
+      function drawStatus(data, svgcanvas) {
+        /*
+        This function draws bar chart of Loan Status
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+          var myChart = new dimple.chart(svgcanvas, data);
+          var x = myChart.addMeasureAxis("x", "count"); 
+          var y = myChart.addCategoryAxis ("y", "LoanStatus");
+          myChart.addSeries("LoanStatus", dimple.plot.bar);
+
+          myChart.draw();
+      }
+
+
+
+
+      function drawLCD(data, svgcanvas) {
+        /*
+        This function draws ListingCreationDate vs count
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+          var myChart = new dimple.chart(svgcanvas, data);
+          var x = myChart.addTimeAxis("x", "ListingCreationDate.QT", "%Y-%m-%d", "%Y"); 
+          myChart.addMeasureAxis("y", "count");
+          x.dataParseFormat = "%Y-%m-%d";
+          x.tickFormat = "%Y";
+          x.timeInterval = 1;
+          myChart.addSeries("LoanStatus", dimple.plot.bar);
+
+          myChart.draw();
+      }
+      
+
+      function drawLCDpct(data, svgcanvas) {
+        /*
+        This function draws ListingCreationDate vs count
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+
+
+          var dataAgg = d3.nest()
+            .key(function(d) {return d["ListingCreationDate.QT"];})
+            .rollup(function (leaves) {
+              return d3.sum(leaves, function(d) {
+                return d.count
+              });
+            })
+            .entries(data);
+
+          debugger;
+
+          data.forEach ( function (d) {
+            var result = dataAgg.filter(function(yr) {
+              return yr.key === d["ListingCreationDate.QT"]
+            });
+
+            d.pct = +d.count / result[0].values;
+          });
+
+          debugger;
+
+          var myChart = new dimple.chart(svgcanvas, data);
+          var x = myChart.addTimeAxis("x", "ListingCreationDate.QT", "%Y-%m-%d", "%Y"); 
+          var y = myChart.addMeasureAxis("y", "pct");
+          x.dataParseFormat = "%Y-%m-%d";
+          x.tickFormat = "%Y";
+          x.timeInterval = 1;
+          y.showPercent = true;
+          myChart.addSeries("LoanStatus", dimple.plot.bar);
+
+          myChart.draw();
+      }
+
+
+      </script>
+
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the TSV file
+    and pass the contents of it to the draw function
+    */
+
+  "use strict";
+  var margin = 75,
+      width = 600 - margin,
+      height = 400 - margin;
+
+
+
+
+  var header = d3.select("body")
+    .append("h2")
+    .text("Frame0");
+
+  var svg0 = d3.select("body")
+    .append("svg")
+      .attr("width", width + margin)
+      .attr("height", height + margin)
+      .attr("id", "svg0")
+    .append('g')
+        .attr('class','chart');
+
+  d3.csv(".\\data\\LoanStatus.csv", function (data){
+    return drawStatus(data, svg0);
+  });
+
+
+
+
+
+
+  var header = d3.select("body")
+    .append("h2")
+    .text("Frame1");
+
+  var svg1 = d3.select("body")
+    .append("svg")
+      .attr("width", width + margin)
+      .attr("height", height + margin)
+      .attr("id", "svg1")
+    .append('g')
+        .attr('class','chart');
+
+  d3.csv(".\\data\\ListingCreationDate.csv", function (data){
+    return drawLCD(data, svg1);
+  });
+
+
+
+
+
+
+
+  var header = d3.select("body")
+    .append("h2")
+    .text("Frame2");
+
+  var svg2 = d3.select("body")
+    .append("svg")
+      .attr("width", width + margin)
+      .attr("height", height + margin)
+      .attr("id", "svg2")
+    .append('g')
+        .attr('class','chart');
+
+  d3.csv(".\\data\\ListingCreationDate.csv", function (data){
+    return drawLCDpct(data, svg2);
+  });
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+
+    <style>
+      circle.dimple-series-1 {
+        fill: "red";
+      }
+
+      h2 {
+        text-align: middle;
+      }
+
+      svg {
+        float:none;
+
+      }
+    </style>
+
+
+
+    <script type="text/javascript">
+      
+      function chart_layout (mychart, pos) {
+      
+        var layout_params = {
+          'main': {"l": 0.05,
+                   "t": 0.15, 
+                   "w": 0.35, 
+                   "h": 0.5},
+
+          'R1': {"l": 0.5,
+                   "t": 0.05, 
+                   "w": 0.4, 
+                   "h": 0.45},
+
+          'R2': {"l": 0.5,
+                   "t": 0.6, 
+                   "w": 0.4, 
+                   "h": 0.25}
+        };
+
+        svg_h = 768;
+        svg_w = 1080;
+
+        mychart.x = layout_params[pos].l * svg_w;
+        mychart.y = layout_params[pos].t * svg_h;
+        mychart.height = layout_params[pos].h * svg_h;
+        mychart.width = layout_params[pos].w * svg_w;
+
+      }
+
+      var LoanStatusOrder = [
+        "Completed", "FinalPaymentInProgress", "Current",
+        "Past Due (1-15 days)", "Past Due (16-30 days)", 
+        "Past Due (31-60 days)", "Past Due (61-90 days)",
+        "Past Due (91-120 days)", "Past Due (>120 days)",
+        "Chargedoff", "Defaulted", "Cancelled"      
+        ]
+
+      var MyDefaultColors = [
+      "#2B803E", "#80C18F", "#437983",
+      "#D49E6A", "#D49E6A",
+      "#AA7039", "#AA7039",
+      "#804915", "#804915",
+      "#D4746A", "#801F15", "#8A8E83"
+      ]
+
+      function setDefaltColor (myChart, mycolors) {
+        myChart.defaultColors = mycolors.map (
+          function(e) {
+            return new dimple.color(e);
+          }
+        );
+
+
+      }
+
+
+
+      function drawStatus(data, pos) {
+        /*
+        This function draws bar chart of Loan Status
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+          var svgcanvas = d3.select("svg#main")
+          var myChart = new dimple.chart(svgcanvas, data);
+          chart_layout (myChart, "main");
+
+          var x = myChart.addMeasureAxis("x", "count"); 
+          var y = myChart.addCategoryAxis ("y", "LoanStatus");
+          y.addOrderRule (LoanStatusOrder);
+          var s = myChart.addSeries("LoanStatus", dimple.plot.bar);
+          s.addOrderRule (LoanStatusOrder);
+
+          setDefaltColor (myChart, MyDefaultColors);
+          myChart.draw();
+      }
+
+
+      function drawLCD(data, pos) {
+        /*
+        This function draws ListingCreationDate vs count
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+
+          var svgcanvas = d3.select("svg#main")
+          var myChart = new dimple.chart(svgcanvas, data);
+          chart_layout (myChart, "R1");
+
+          var x = myChart.addTimeAxis("x", "ListingCreationDate.QT", "%Y-%m-%d", "%Y"); 
+          myChart.addMeasureAxis("y", "count");
+          x.dataParseFormat = "%Y-%m-%d";
+          x.tickFormat = "%Y";
+          x.timeInterval = 1;
+          s = myChart.addSeries("LoanStatus", dimple.plot.bar);
+          s.addOrderRule (LoanStatusOrder);          
+
+          setDefaltColor (myChart, MyDefaultColors);
+          myChart.draw();
+      }
+      
+
+      function drawLCDpct(data, pos) {
+        /*
+        This function draws ListingCreationDate vs count
+        
+        Input: data-pass through function callback
+               svgcanvas- an <svg> element. Use a wrapper function to pass
+        Action: draw an stacked histogram chart grouped by the loan status
+        Output: None
+        */
+
+
+
+
+          var svgcanvas = d3.select("svg#main");
+          var myChart = new dimple.chart(svgcanvas, data);
+          chart_layout (myChart, "R2");
+
+          var x = myChart.addTimeAxis("x", "ListingCreationDate.QT", "%Y-%m-%d", "%Y"); 
+          var y = myChart.addPctAxis("y", "count");
+          x.dataParseFormat = "%Y-%m-%d";
+          x.tickFormat = "%Y";
+          x.timeInterval = 1;
+          y.showPercent = true;
+          var s = myChart.addSeries("LoanStatus", dimple.plot.bar);
+          s.addOrderRule(LoanStatusOrder);
+
+          setDefaltColor (myChart, MyDefaultColors);
+
+          myChart.draw();
+      }
+
+
+      </script>
+
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the TSV file
+    and pass the contents of it to the draw function
+    */
+
+  "use strict";
+
+  var svg = d3.select("body")
+    .append("svg")
+      .attr("width", 1080)
+      .attr("height", 768)
+      .attr("id", "main")
+    .append('g')
+        .attr('class','chart');
+
+  d3.csv(".\\data\\LoanStatus.csv", function (data){
+    return drawStatus(data, "main");
+  });
+
+
+  d3.csv(".\\data\\ListingCreationDate.csv", function (data){
+    return drawLCD(data, "R1");
+  });
+
+  d3.csv(".\\data\\ListingCreationDate.csv", function (data){
+    return drawLCDpct(data, "R2");
+  });
+
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+---
+title: "ProsperLoan"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Prosper Loan EDA
+
+This is the exploratory data analytics for the Prosper Loan Data. The objective of this EDA is to find stories conveyed by this dataset, and to down-select 2-3 plots to construct the final visulaziation.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(reshape2)
+library(gridExtra)
+library(plyr)
+library(dplyr)
+library(tidyr)
+```
+
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+# setwd("C:/Users/Lixia/Documents/DataAnalystDegree/EDA")
+loandata=read.csv('./data/prosperLoanData.csv')
+
+```
+
+### What is the structure of your dataset?
+There are about 80 fields in total, which are important X, and important Y?
+
+```{r}
+# Brief data structure analysis
+print(str(loandata))
+data.str <- summary(loandata)
+write.csv(data.str, './data/data.str.csv')
+```
+
+Key Y:
+      LoanStatus
+Key X: 
+      CreditGrade
+      ListingCreationDate
+      Term
+      BorrowerAPR
+      ProsperScore
+      ListingCategory..numeric.
+      Occupation
+      EmploymentStatus
+      EmploymentStatusDuration
+      IsBorrowerHomeowner
+      CreditScoreRangeLower
+      CreditScoreRangeUpper
+      DebtToIncomeRatio
+      IncomeRange
+      StatedMonthlyIncome
+      ProsperPrincipalBorrowed
+
+
+
+
+```{r}
+
+# LoanStatus
+
+a <- ggplot(loandata, aes(x=LoanStatus))
+a + geom_bar () + 
+    coord_flip()
+
+# ListCreation Date
+
+loandata["ListingCreationDateStrf"] <- as.POSIXct(loandata$ListingCreationDate, format="%Y-%m-%d %H:%M:%S")
+a <- ggplot(loandata, aes(ListingCreationDateStrf))
+a + geom_histogram ()
+
+#Term
+a <- ggplot(loandata, aes(x=Term))
+a + geom_bar ()
+
+
+#BorrowerAPR
+a <- ggplot(loandata, aes(x=BorrowerAPR))
+a + geom_histogram ()
+
+#ProsperScore
+a <- ggplot(loandata, aes(x=ProsperScore))
+a + geom_bar ()
+
+#ListingCategory..numeric.
+a <- ggplot(loandata, aes(x=ListingCategory..numeric.))
+a + geom_bar () +
+  coord_flip()
+
+#Occupation
+a <- ggplot(loandata, aes(x=Occupation))
+a + geom_bar () +
+  coord_flip()
+
+#EmploymentStatus
+a <- ggplot(loandata, aes(x=EmploymentStatus))
+a + geom_bar ()
+
+#EmploymentStatusDuration
+a <- ggplot(loandata, aes(x=EmploymentStatusDuration))
+a + geom_histogram ()
+
+#IsBorrowerHomeowner
+a <- ggplot(loandata, aes(x=IsBorrowerHomeowner))
+a + geom_bar ()
+      
+
+#CreditScoreAvg
+loandata["CreditScoreAvg"] <- (loandata$CreditScoreRangeLower + loandata$CreditScoreRangeUpper +1)/2
+a <- ggplot(loandata, aes(x=CreditScoreAvg))
+a + geom_histogram ()
+    
+
+#DebtToIncomeRatio
+loandata %>% 
+  filter(!is.na(DebtToIncomeRatio)) %>% 
+  filter(DebtToIncomeRatio < quantile(DebtToIncomeRatio, 0.99)) %>% 
+  ggplot(aes(x=DebtToIncomeRatio)) +
+  geom_histogram(binwidth=0.01)
+
+
+#IncomeRange
+a <- ggplot(loandata, aes(x=IncomeRange))
+a + geom_bar ()
+
+#StatedMonthlyIncome
+
+loandata %>% 
+  filter(StatedMonthlyIncome < quantile(StatedMonthlyIncome, 0.99)) %>% 
+  ggplot(aes(x=StatedMonthlyIncome)) +
+  geom_histogram(binwidth =1000)
+
+
+```
+
+Then to explore the bivariate: how debt default occur in different factors?
+```{r}
+
+# LoanStatus
+
+a <- ggplot(loandata, aes(x=LoanStatus))
+a + geom_bar () + 
+    coord_flip()
+
+# ListCreation Date
+
+loandata["ListingCreationDateStrf"] <- as.POSIXct(loandata$ListingCreationDate, format="%Y-%m-%d %H:%M:%S")
+a <- ggplot(loandata, aes(ListingCreationDateStrf))
+a + geom_histogram (aes(fill=LoanStatus), position='stack')
+a + geom_histogram (aes(fill=LoanStatus), position='fill')
+  
+    
+  
+
+#Term
+a <- ggplot(loandata, aes(x=Term))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+
+
+#BorrowerAPR
+a <- ggplot(loandata, aes(x=BorrowerAPR))
+a + geom_histogram (aes(fill=LoanStatus), position='stack')
+a + geom_histogram (aes(fill=LoanStatus), position='fill')
+
+#ProsperScore
+a <- ggplot(loandata, aes(x=ProsperScore))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+
+#ListingCategory..numeric.
+a <- ggplot(loandata, aes(x=ListingCategory..numeric.))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+
+  
+#Occupation
+a <- ggplot(loandata, aes(x=Occupation))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill') +
+    coord_flip()
+
+#EmploymentStatus
+a <- ggplot(loandata, aes(x=EmploymentStatus))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+
+#EmploymentStatusDuration
+a <- ggplot(loandata, aes(x=EmploymentStatusDuration))
+a + geom_histogram (aes(fill=LoanStatus), position='stack')
+a + geom_histogram (aes(fill=LoanStatus), position='fill')
+
+#IsBorrowerHomeowner
+a <- ggplot(loandata, aes(x=IsBorrowerHomeowner))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+      
+
+#CreditScoreAvg
+loandata["CreditScoreAvg"] <- (loandata$CreditScoreRangeLower + loandata$CreditScoreRangeUpper)/2
+a <- ggplot(loandata, aes(x=CreditScoreAvg))
+a + geom_histogram (aes(fill=LoanStatus), position='stack')
+a + geom_histogram (aes(fill=LoanStatus), position='fill')
+    
+
+#DebtToIncomeRatio
+a <- loandata %>% 
+  filter(!is.na(DebtToIncomeRatio)) %>% 
+  filter(DebtToIncomeRatio < quantile(DebtToIncomeRatio, 0.99)) %>% 
+  ggplot(aes(x=DebtToIncomeRatio, fill=LoanStatus))
+
+a + geom_histogram (binwidth=0.01,  position='stack')
+a + geom_histogram (binwidth=0.01,  position='fill')
+
+
+#IncomeRange
+a <- ggplot(loandata, aes(IncomeRange))
+a + geom_bar (aes(fill=LoanStatus), position='stack')
+a + geom_bar (aes(fill=LoanStatus), position='fill')
+
+#StatedMonthlyIncome
+
+loandata %>% 
+  filter(StatedMonthlyIncome < quantile(StatedMonthlyIncome, 0.99)) %>% 
+  ggplot(aes(x=StatedMonthlyIncome)) +
+  geom_histogram(binwidth = 1000, aes(fill=LoanStatus), position = 'stack')
+
+loandata %>% 
+  filter(StatedMonthlyIncome < quantile(StatedMonthlyIncome, 0.99)) %>% 
+  ggplot(aes(StatedMonthlyIncome, fill=LoanStatus)) +
+  geom_histogram(binwidth = 1000, position = 'fill')
+
+
+```
+
+### MVP 1 ###
+
+```{r}
+
+
+loandata$LoanStatus <- factor(loandata$LoanStatus, c(
+  "Completed", "FinalPaymentInProgress", "Current",
+  "Past Due (1-15 days)", "Past Due (16-30 days)", 
+  "Past Due (31-60 days)", "Past Due (61-90 days)",
+  "Past Due (91-120 days)", "Past Due (>120 days)",
+  "Chargedoff", "Defaulted", "Cancelled"
+))
+
+df1 <- loandata [, c("LoanStatus", "ListingCreationDateStrf")]
+
+df2 <- df1 %>% group_by (LoanStatus) %>% 
+                dplyr::summarise (count=n())
+write.csv(df2, './data/LoanStatus.csv')
+
+
+df1$ListingCreationDate.QT <- cut (df1$ListingCreationDateStrf, breaks="quarter")
+
+df3 <- df1 %>% group_by (ListingCreationDate.QT, LoanStatus) %>% 
+  dplyr::summarise (count=n())
+
+write.csv(df3, './data/ListingCreationDate.csv')
+
+
+```
+
+### MVP2 ###
+1. The Loan Status categories need to be grouped.
+
+```{r}
+
+LSF.original <- c(
+  "Completed", "FinalPaymentInProgress", "Current",
+  "Past Due (1-15 days)", "Past Due (16-30 days)", 
+  "Past Due (31-60 days)", "Past Due (61-90 days)",
+  "Past Due (91-120 days)", "Past Due (>120 days)",
+  "Chargedoff", "Defaulted", "Cancelled"
+)
+
+LSF.new <- c(
+  "Completed", "Completed", "Current",
+  "Past Due", "Past Due", 
+  "Past Due", "Past Due",
+  "Past Due", "Past Due",
+  "Defaulted", "Defaulted", NA
+)
+
+LSF.order <- c(
+  "Completed", "Current",
+  "Past Due", "Defaulted"
+)
+
+
+
+loandata$LoanStatusGroup <- mapvalues(loandata$LoanStatus, 
+          from = LSF.original, to = LSF.new)
+
+loandata$LoanStatusGroup <- factor(loandata$LoanStatusGroup, LSF.order)
+```
+
+2. Redo the output using the LoanStatusGroup
+
+
+```{r}
+
+
+df1 <- loandata[, c("LoanStatusGroup", "ListingCreationDateStrf")] %>% 
+  filter(!is.na(LoanStatusGroup))
+
+df2 <- df1 %>% group_by (LoanStatusGroup) %>% 
+                 dplyr::summarise (count=n())
+write.csv(df2, './data/LoanStatus.csv')
+
+
+df1$ListingCreationDate.QT <- cut (df1$ListingCreationDateStrf, breaks="quarter")
+
+df3 <- df1 %>% group_by (ListingCreationDate.QT, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+
+write.csv(df3, './data/ListingCreationDate.csv')
+```
+
+3. Output other categories
+
+
+```{r}
+
+
+df1 <- loandata[, c("LoanStatusGroup", "BorrowerAPR")] %>% 
+  filter(!is.na(LoanStatusGroup))
+
+
+df1$BorrowerAPR.Cut <- cut (df1$BorrowerAPR, breaks=30)
+
+df3 <- df1 %>% group_by (BorrowerAPR.Cut, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+
+df3$RName <- as.numeric(rownames(df3))
+
+write.csv(df3, './data/BorrowerAPR.csv')
+
+
+
+df1 <- loandata[, c("LoanStatusGroup", "ProsperScore")] %>% 
+  filter(!is.na(LoanStatusGroup)) %>% 
+  filter(!is.na(ProsperScore))
+
+df3 <- df1 %>% group_by (ProsperScore, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+
+df3$RName <- as.numeric(rownames(df3))
+
+write.csv(df3, './data/ProsperScore.csv')
+
+
+
+df1 <- loandata[, c("LoanStatusGroup", "CreditScoreAvg")] %>% 
+  filter(!is.na(LoanStatusGroup)) %>% 
+  filter(CreditScoreAvg > 300)
+
+df3 <- df1 %>% group_by (CreditScoreAvg, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+
+df3$RName <- as.numeric(rownames(df3))
+
+write.csv(df3, './data/CreditScoreAvg.csv')
+
+
+df1 <- loandata[, c("LoanStatusGroup", "DebtToIncomeRatio")] %>% 
+  filter(!is.na(LoanStatusGroup)) %>% 
+  filter(DebtToIncomeRatio < 1.0)
+
+df1$DTIR.Cut <- cut(df1$DebtToIncomeRatio, breaks=20)
+
+df3 <- df1 %>% group_by (DTIR.Cut, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+df3$RName <- as.numeric(rownames(df3))
+write.csv(df3, './data/DebtToIncomeRatio.csv')
+
+
+
+IncomeRangeOrder <- c("Not displayed",  "Not employed", "$0",  "$1-24,999", "$25,000-49,999", 
+                      "$50,000-74,999",  "$75,000-99,999",   "$100,000+")
+
+
+loandata$IncomeRange <- factor (loandata$IncomeRange, IncomeRangeOrder)
+
+df1 <- loandata[, c("LoanStatusGroup", "IncomeRange")] %>% 
+  filter(!is.na(LoanStatusGroup))
+
+
+df3 <- df1 %>% group_by (IncomeRange, LoanStatusGroup) %>% 
+  dplyr::summarise (count=n())
+df3$RName <- as.numeric(rownames(df3))
+write.csv(df3, './data/IncomeRange.csv')
+
+```
+
+
